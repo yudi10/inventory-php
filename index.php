@@ -67,7 +67,7 @@ if(isset($_POST['btn_login'])){
     echo '<script type="text/javascript">
           jQuery(function validation(){
             swal({
-              title: "Login Fail!",
+              title: "Warning Email OR Password is WRONG !!",
               text: "You clicked the button!",
               icon: "error",
               button: "OK",
@@ -130,7 +130,7 @@ if(isset($_POST['btn_login'])){
       </div>
       <div class="row">
         <div class="col-xs-8">
-          <a href="#">I forgot my password</a><br>
+          <a href="#" onclick="swal('To Get Password','Please Contact to Admin','error');">I forgot my password</a><br>
         </div>
         <!-- /.col -->
         <div class="col-xs-4">
