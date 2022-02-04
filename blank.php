@@ -21,6 +21,16 @@
       <!--------------------------
         | Your Page Content Here |
         -------------------------->
+        <div class="box box-info">
+            <div class="box-header with-border">
+                <h3 class="box-title">Blank Form</h3>
+            </div>
+    <!-- /.box-header -->
+    <!-- form start -->
+            <div class="box-body">
+
+            </div>
+        </div>
 
     </section>
     <!-- /.content -->

@@ -1,0 +1,21 @@
+insert github
+
+- install git base here 
+- Login to github.com
+- buat nama repository baru
+- buka git base di folder project
+- tulis perintah "git init"
+- git add . (untuk upload semua file project ke github)
+- git commit -m "Isi komentar"
+- git remote add origin https://github.com/yudi10/inventory-php
+- git push -u origin master
+==== Selesai =====
+
+Update github
+
+- buka git base di folder project
+- tulis perintah "git init"
+- git add . 
+- git commit -m "Isi Komentar"
+- git push
+=== Selesai =====
