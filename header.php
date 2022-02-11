@@ -50,6 +50,25 @@ scratch. This page gets rid of all links and provides the needed markup only.
 
         <!-- DataTables -->
   <link rel="stylesheet" href="template/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css">
+
+  <!-- Select2 -->
+  <link rel="stylesheet" href="template/bower_components/select2/dist/css/select2.min.css">
+
+  <!-- daterange picker -->
+  <link rel="stylesheet" href="template/bower_components/bootstrap-daterangepicker/daterangepicker.css">
+  <!-- bootstrap datepicker -->
+  <link rel="stylesheet" href="template/bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
+
+  <script src="template/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
+  <!-- bootstrap datepicker -->
+  <script src="template/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+
+  <!-- iCheck for checkboxes and radio inputs -->
+  <link rel="stylesheet" href="template/plugins/iCheck/all.css">
+  <!-- iCheck 1.0.1 -->
+<script src="template/plugins/iCheck/icheck.min.js"></script>
+<!-- Select2 -->
+<script src="template/bower_components/select2/dist/js/select2.full.min.js"></script>
 </head>
 
 <body class="hold-transition skin-blue sidebar-mini">
@@ -151,6 +170,9 @@ scratch. This page gets rid of all links and provides the needed markup only.
         <!-- <li class="active"><a href="#"><i class="fa fa-link"></i> <span>Link</span></a></li> -->
         <li><a href="dashboard.php"><i class="fa fa-dashboard"></i> <span>Dashboard</span></a></li>
         <li><a href="category.php"><i class="fa fa-list-alt"></i> <span>Category</span></a></li>
+        <li><a href="addproduct.php"><i class="fa fa-product-hunt"></i> <span>Product</span></a></li>
+        <li><a href="productlist.php"><i class="fa fa-th-list"></i> <span>Product List</span></a></li>
+        <li><a href="createorder.php"><i class="fa fa-th-list"></i> <span>Create Order</span></a></li>
         <li><a href="registration.php"><i class="fa fa-registered"></i> <span>Registration</span></a></li>
         <!-- <li class="treeview">
           <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>

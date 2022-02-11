@@ -3,6 +3,10 @@ include_once 'connectdb.php';
 
 session_start();
 
+if($_SESSION['useremail']=="" OR $_SESSION['role']=="User"){
+  header('location:index.php');
+}
+
  include_once'header.php'; 
 ?>
 <!-- Content Wrapper. Contains page content -->
@@ -33,7 +37,7 @@ session_start();
     <!-- /.box-header -->
     <!-- form start -->
             <div class="box-body">
-            
+              <div style="overflow-x:auto;">
                 <table id="tableProduct" class="table table-striped" >
                     <thead>
                         <tr>
@@ -75,7 +79,7 @@ session_start();
                                         <a href="editproduct.php?id='.$row->pid.'" class="btn btn-warning" role="button"><span class="glyphicon glyphicon-edit" style="color:#ffffff" data-toggle="tooltip" title="edit product"></span></a>
                                     </td>
                                     <td>
-                                        <a href="deleteproduct.php?id='.$row->pid.'" class="btn btn-danger" role="button"><span class="glyphicon glyphicon-trash" style="color:#ffffff" data-toggle="tooltip" title="delete product"></span></a>
+                                        <button id='.$row->pid.' class="btn btn-danger btndelete" role="button"><span class="glyphicon glyphicon-trash" style="color:#ffffff" data-toggle="tooltip" title="Delete product"></span></button>
                                     </td>
                             
                             </tr>';
@@ -84,7 +88,7 @@ session_start();
                     ?>
                     </tbody>
                 </table>
-
+              </div>
             </div>
         </div>
 
@@ -104,6 +108,50 @@ session_start();
     $(document).ready( function () {
         $('[data-toggle="tooltip"]').tooltip();
     } );
+  </script>
+
+  <script>
+    $(document).ready(function(){
+
+        $('.btndelete').click(function(){
+          
+            var tdh = $(this);
+            var id = $(this).attr("id");
+
+            swal({
+                  title:"Are you sure?",
+                  text:"Once deleted, you will not be able to recover this product!",
+                  icon: "warning",
+                  buttons: true,
+                  dangerMode: true,
+                })
+                .then((willDelete) => {
+                  if(willDelete){
+
+                    $.ajax({
+                        url: 'productdelete.php',
+                        type: 'post',
+                        data:{
+                          pidd:id
+                        },
+                        success: function(data){
+                          tdh.parents('tr').hide();
+                        }
+                      });
+
+                    swal("Your product has been deleted!", {
+                        icon: "success",
+                    });
+                  }else{
+                    swal("Your product is safe!");
+                  }
+                });
+
+            
+
+        });
+
+    });
   </script>
 
 <?php 
