@@ -110,16 +110,16 @@ function fill_product($pdo){
                                     <div class="input-group-addon">
                                         <i class="fa fa-usd"></i>
                                     </div>
-                                    <input type="text" class="form-control" name="txtsubtotal" required>
+                                    <input type="text" class="form-control" name="txtsubtotal" id="txtsubtotal" required>
                                 </div>
                         </div>
                         <div class="form-group">
-                            <label>Tax (5%)</label>
+                            <label>Tax (10%)</label>
                                 <div class="input-group">
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txttax" required>
+                                <input type="text" class="form-control" name="txttax" id="txttax" required>
                                 </div>
                         </div>
                         <div class="form-group">
@@ -128,7 +128,7 @@ function fill_product($pdo){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txtdiscount" required>
+                                <input type="text" class="form-control" name="txtdiscount" id="txtdiscount" required>
                                 </div>
                         </div>
                     </div>
@@ -139,7 +139,7 @@ function fill_product($pdo){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txttotal" required>
+                                <input type="text" class="form-control" name="txttotal" id="txttotal" required>
                                 </div>
                         </div>
                         <div class="form-group">
@@ -148,7 +148,7 @@ function fill_product($pdo){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txtpaid" required>
+                                <input type="text" class="form-control" name="txtpaid" id="txtpaid" required>
                                 </div>
                         </div>
                         <div class="form-group">
@@ -157,7 +157,7 @@ function fill_product($pdo){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txtdue" required>
+                                <input type="text" class="form-control" name="txtdue" id="txtdue" required>
                                 </div>
                         </div>
                         <br>
@@ -211,18 +211,93 @@ function fill_product($pdo){
 
             html+='<td><input type="text" class="form-control stock" name="stock[]" readonly></td>';
             html+='<td><input type="text" class="form-control price" name="price[]" readonly></td>';
-            html+='<td><input type="text" class="form-control qty" name="qty[]" ></td>';
+            html+='<td><input type="number" min="1" class="form-control qty" name="qty[]" ></td>';
             html+='<td><input type="text" class="form-control total" name="total[]" readonly></td>';
             html+='<td><center><button type="button" name="remove" class="btn btn-danger btn-sm btnremove"><span class="glyphicon glyphicon-remove"></span></button></center></td>';
             $('#producttable').append(html);
 
             //Initialize Select2 Elements
             $('.productid').select2()
+
+            $(".productid").on('change', function(e){
+                var productid = this.value;
+                var tr=$(this).parent().parent();
+
+                $.ajax({
+                    url:"getproduct.php",
+                    method:"get",
+                    data:{id:productid},
+                    success:function(data){
+
+                        // console.log(data);
+                        tr.find(".stock").val(data["pstock"]);
+                        tr.find(".price").val(data["saleprice"]);
+                        tr.find(".qty").val(1);
+                        tr.find(".total").val( tr.find(".qty").val() * tr.find(".price").val() );
+                        calculate(0,0);
+                    }
+                })
+            })
         })
 
         $(document).on('click','.btnremove',function(){
             $(this).closest('tr').remove();
+            calculate(0,0);
+            $("#txtpaid").val(0);
         })
+
+        $("#producttable").delegate(".qty","keyup change", function(){
+
+            var quantity = $(this);
+            var tr=$(this).parent().parent();
+
+            if( (quantity.val()-0)>(tr.find(".stock").val()-0) ){
+
+                swal("WARNING!","Sorry the much of quantity is not available","warning");
+                quantity.val(1);
+                tr.find(".total").val(quantity.val() * tr.find(".price").val());
+                calculate(0,0);
+            }else{
+                tr.find(".total").val(quantity.val() * tr.find(".price").val());
+                calculate(0,0);
+            }
+
+        })
+
+        function calculate(dis,paid){
+            var subtotal = 0;
+            var tax = 0;
+            var discount = dis;
+            var net_total = 0;
+            var paid_amt = paid;
+            var due = 0;
+
+            $(".total").each(function(){
+                subtotal = subtotal+($(this).val()*1);
+            })
+            tax = 0.1*subtotal;
+            net_total = tax+subtotal;
+            net_total = net_total-discount;
+            due = net_total-paid_amt;
+
+            $("#txtsubtotal").val(subtotal.toFixed(0));
+            $("#txttax").val(tax.toFixed(0));
+            $("#txttotal").val(net_total.toFixed(0));
+            $("#txtdiscount").val(discount);
+            $("#txtdue").val(due.toFixed(0));
+        }
+
+        $("#txtdiscount").keyup(function(){
+            var discount = $(this).val();
+            calculate(discount,0);
+        })
+
+        $("#txtpaid").keyup(function(){
+            var paid = $(this).val();
+            var discount = $("#txtdiscount").val();
+            calculate(discount,paid);
+        })
+
     });
 
   </script>
