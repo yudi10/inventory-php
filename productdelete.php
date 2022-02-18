@@ -14,7 +14,7 @@ $delete = $pdo->prepare($sql);
 if($delete->execute()){
 
 }else{
-
+  echo 'Error in Deleting';
 }
 
 

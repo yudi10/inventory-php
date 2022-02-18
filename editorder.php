@@ -4,7 +4,7 @@ include_once 'connectdb.php';
 
 session_start();
 
-function fill_product($pdo){
+function fill_product($pdo,$pid){
     $output='';
 
     $select = $pdo->prepare("SELECT * FROM tbl_product ORDER BY pname ASC");
@@ -12,21 +12,52 @@ function fill_product($pdo){
 
     $result = $select->fetchAll();
     foreach($result as $row){
-        $output.='<option value="'.$row["pid"].'">'.$row["pname"].'</option>';
+        $output.='<option value="'.$row["pid"].'"';
+        if($pid==$row['pid']){
+            $output.='selected';
+        }
+        $output.='>'.$row["pname"].'</option>';
     }
     return $output;
 }
 
-if(isset($_POST['btnsaveorder'])){
-    $customer_name = $_POST['txtcustomer'];
-    $order_date = date('Y-m-d', strtotime($_POST['orderdate']));
-    $subtotal = $_POST["txtsubtotal"];
-    $tax = $_POST['txttax'];
-    $discount = $_POST['txtdiscount'];
-    $total = $_POST['txttotal'];
-    $paid = $_POST['txtpaid'];
-    $due = $_POST['txtdue'];
-    $payment_type = $_POST['rb'];
+// edit data order
+$id = $_GET['id'];
+$select = $pdo->prepare("SELECT * FROM tbl_invoice WHERE invoice_id = $id");
+$select->execute();
+
+$row = $select->fetch(PDO::FETCH_ASSOC);
+
+    $customer_name = $row['customer_name'];
+    $order_date = date('Y-m-d', strtotime($row['order_date']));
+    $subtotal = $row["subtotal"];
+    $tax = $row['tax'];
+    $discount = $row['discount'];
+    $total = $row['total'];
+    $paid = $row['paid'];
+    $due = $row['due'];
+    $payment_type = $row['payment_type'];
+
+
+    $select = $pdo->prepare("SELECT * FROM tbl_invoice_detail WHERE invoice_id = $id");
+    $select->execute();
+    $row_invoice_detail = $select->fetchAll(PDO::FETCH_ASSOC);
+
+
+if(isset($_POST['btnupdateorder'])){
+
+    // Steps for btnupdateorder button
+
+    // - Get values from text feilds and from array in variable
+    $txt_customer_name = $_POST['txtcustomer'];
+    $txt_order_date = date('Y-m-d', strtotime($_POST['orderdate']));
+    $txt_subtotal = $_POST["txtsubtotal"];
+    $txt_tax = $_POST['txttax'];
+    $txt_discount = $_POST['txtdiscount'];
+    $txt_total = $_POST['txttotal'];
+    $txt_paid = $_POST['txtpaid'];
+    $txt_due = $_POST['txtdue'];
+    $txt_payment_type = $_POST['rb'];
     // 
 
     $arr_productid = $_POST['productid'];
@@ -36,41 +67,68 @@ if(isset($_POST['btnsaveorder'])){
     $arr_price = $_POST['price'];
     $arr_total = $_POST['total'];
 
-    $insert = $pdo->prepare("INSERT INTO tbl_invoice(customer_name,order_date,subtotal,tax,discount,total,paid,due,payment_type) VALUES(:cust,:orderdate,:stotal,:tax,:disc,:total,:paid,:due,:ptype)");
+    // - Write update query for tbl_product stock
+    foreach($row_invoice_detail as $item_invoice_detail){
+        $updateproduct = $pdo->prepare("UPDATE tbl_product SET pstock=pstock+".$item_invoice_detail['qty']." WHERE pid='".$item_invoice_detail['product_id']."'");
 
-    $insert->bindParam(':cust',$customer_name);
-    $insert->bindParam(':orderdate',$order_date);
-    $insert->bindParam(':stotal',$subtotal);
-    $insert->bindParam(':tax',$tax);
-    $insert->bindParam(':disc',$discount);
-    $insert->bindParam(':total',$total);
-    $insert->bindParam(':paid',$paid);
-    $insert->bindParam(':due',$due);
-    $insert->bindParam(':ptype',$payment_type);
+        $updateproduct->execute();
+    }
 
-    $insert->execute();
+    // - write delete query for tbl_invoice_detail table data where invoice_id =$id
+    $delete_invoice_detail = $pdo->prepare("DELETE FROM tbl_invoice_detail WHERE invoice_id=$id");
+    
+    $delete_invoice_detail->execute();
+
+
+    // write update query for tbl_invoice table data
+    $upate_invoice = $pdo->prepare("UPDATE tbl_invoice SET customer_name=:cust,order_date=:orderdate,subtotal=:stotal,tax=:tax,discount=:disc,total=:total,paid=:paid,due=:due,payment_type=:ptype WHERE invoice_id=$id");
+
+    $upate_invoice->bindParam(':cust',$txt_customer_name);
+    $upate_invoice->bindParam(':orderdate',$txt_order_date);
+    $upate_invoice->bindParam(':stotal',$txt_subtotal);
+    $upate_invoice->bindParam(':tax',$txt_tax);
+    $upate_invoice->bindParam(':disc',$txt_discount);
+    $upate_invoice->bindParam(':total',$txt_total);
+    $upate_invoice->bindParam(':paid',$txt_paid);
+    $upate_invoice->bindParam(':due',$txt_due);
+    $upate_invoice->bindParam(':ptype',$txt_payment_type);
+
+    $upate_invoice->execute();
 
     // insert to tbl_invoice_detail
     $invoice_id = $pdo->lastInsertId();
     if($invoice_id!=null){
         for($i=0 ; $i<count($arr_productid) ; $i++){
 
-            $rem_qty = $arr_stock[$i]-$arr_qty[$i];
-            if($rem_qty<0){
-                return "Order Is Not Complate";
-            }else{
+            // - write select query for tbl_product table to get out stock value
+            $selectpdt = $pdo->prepare("SELECT * FROM tbl_product WHERE pid='".$arr_productid[$i]."'");
+            $selectpdt->execute();
+
+            while($rowpdt = $selectpdt->fetch(PDO::FETCH_OBJ)){
+
+                    $db_stock[$i] = $rowpdt->pstock;
+
+                $rem_qty = $db_stock[$i]-$arr_qty[$i]; 
+                    if($rem_qty<0){
+                        return "Order Is Not Complate";
+                    }else{
+
+                        // write update query for tbl_product table to update stock values
                 $update = $pdo->prepare("UPDATE tbl_product SET pstock ='$rem_qty' WHERE pid='".$arr_productid[$i]."'");
                 $update->execute();
+                }
             }
 
+            
+            // write insert query for tbl_invoice_detail for insert new records
             $insert=$pdo->prepare("INSERT INTO tbl_invoice_detail(invoice_id,product_id,product_name,qty,price,order_date) VALUES(:invid,:pid,:pname,:qty,:price,:orderdate)");
 
-            $insert->bindParam(':invid',$invoice_id);
+            $insert->bindParam(':invid',$id);
             $insert->bindParam(':pid',$arr_productid[$i]);
             $insert->bindParam(':pname',$arr_productname[$i]);
             $insert->bindParam(':qty',$arr_qty[$i]);
             $insert->bindParam(':price',$arr_price[$i]);
-            $insert->bindParam(':orderdate',$order_date);
+            $insert->bindParam(':orderdate',$txt_order_date);
 
             $insert->execute();
 
@@ -81,7 +139,11 @@ if(isset($_POST['btnsaveorder'])){
 
         header('location:orderlist.php');
     }
-}
+
+
+    
+    }
+
 
  include_once'header.php'; 
 ?>
@@ -90,7 +152,7 @@ if(isset($_POST['btnsaveorder'])){
     <!-- Content Header (Page header) -->
     <section class="content-header">
       <h1>
-       Create Order
+       Edit Order
         <!-- <small>Optional description</small> -->
       </h1>
       <ol class="breadcrumb">
@@ -108,7 +170,7 @@ if(isset($_POST['btnsaveorder'])){
         <div class="box box-info">
             <form action="" method="post" name="">
                 <div class="box-header with-border">
-                    <h3 class="box-title">New Order</h3>
+                    <h3 class="box-title">Edit Order</h3>
                 </div>
         <!-- /.box-header -->
         <!-- form start -->
@@ -122,7 +184,7 @@ if(isset($_POST['btnsaveorder'])){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                    <input type="text" class="form-control" name="txtcustomer" placeholder="Enter Customer Name" required>
+                                    <input type="text" class="form-control" name="txtcustomer" value="<?= $customer_name; ?>" required>
                                 </div>
                         </div>
 
@@ -136,7 +198,7 @@ if(isset($_POST['btnsaveorder'])){
                                 <div class="input-group-addon">
                                 <i class="fa fa-calendar"></i>
                                 </div>
-                            <input type="text" class="form-control pull-right" id="datepicker" name="orderdate" value="<?= date("Y-m-d"); ?>" data-date-format="yyyy-mm-dd">
+                            <input type="text" class="form-control pull-right" id="datepicker" name="orderdate" value="<?= $order_date; ?>">
                             </div>
                             <!-- /.input group -->
                         </div>
@@ -162,6 +224,29 @@ if(isset($_POST['btnsaveorder'])){
                                     </th>
                                 </tr>
                             </thead>
+                            <?php 
+
+                                foreach($row_invoice_detail as $item_invoice_detail){
+                                    $select = $pdo->prepare("SELECT * FROM tbl_product WHERE pid = '{$item_invoice_detail['product_id']}'");
+                                    $select->execute();
+                                    $row_product = $select->fetch(PDO::FETCH_ASSOC); 
+                                    
+                            ?>
+                            <tr>
+                                <?php 
+
+                                    echo '<td><input type="hidden" class="form-control pname" name="productname[]" value="'.$row_product['pname'].'" readonly></td>';
+                                    echo '<td><select class="form-control productidedit" name="productid[]" style="width: 200px";><option value="">Select Option</option> '.fill_product($pdo, $item_invoice_detail['product_id']).' </select></td>';
+
+                                    echo '<td><input type="text" class="form-control stock" name="stock[]" value="'.$row_product['pstock'].'" readonly></td>';
+                                    echo '<td><input type="text" class="form-control price" name="price[]" value="'.$row_product['saleprice'].'" readonly></td>';
+                                    echo '<td><input type="number" min="1" class="form-control qty" value="'.$item_invoice_detail['qty'].'" name="qty[]" ></td>';
+                                    echo '<td><input type="text" class="form-control total" name="total[]" value="'.$row_product['saleprice']*$item_invoice_detail['qty'].'" readonly></td>';
+                                    echo '<td><center><button type="button" name="remove" class="btn btn-danger btn-sm btnremove"><span class="glyphicon glyphicon-remove"></span></button></center></td>';
+
+                                ?>
+                            </tr>
+                            <?php } ?>
                         </table>
                         </div>
                     </div>
@@ -175,7 +260,7 @@ if(isset($_POST['btnsaveorder'])){
                                     <div class="input-group-addon">
                                         <i class="fa fa-usd"></i>
                                     </div>
-                                    <input type="text" class="form-control" name="txtsubtotal" id="txtsubtotal" required readonly>
+                                    <input type="text" class="form-control" name="txtsubtotal" id="txtsubtotal" value="<?= $subtotal; ?>" required readonly>
                                 </div>
                         </div>
                         <div class="form-group">
@@ -184,7 +269,7 @@ if(isset($_POST['btnsaveorder'])){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txttax" id="txttax" required readonly>
+                                <input type="text" class="form-control" name="txttax" id="txttax" value="<?= $tax; ?>" required readonly>
                                 </div>
                         </div>
                         <div class="form-group">
@@ -193,7 +278,7 @@ if(isset($_POST['btnsaveorder'])){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txtdiscount" id="txtdiscount" required>
+                                <input type="text" class="form-control" name="txtdiscount" id="txtdiscount" value="<?= $discount; ?>" required>
                                 </div>
                         </div>
                     </div>
@@ -204,7 +289,7 @@ if(isset($_POST['btnsaveorder'])){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txttotal" id="txttotal" required readonly>
+                                <input type="text" class="form-control" name="txttotal" id="txttotal" value="<?= $total; ?>" required readonly>
                                 </div>
                         </div>
                         <div class="form-group">
@@ -213,7 +298,7 @@ if(isset($_POST['btnsaveorder'])){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txtpaid" id="txtpaid" required>
+                                <input type="text" class="form-control" name="txtpaid" id="txtpaid" value="<?= $paid; ?>" required>
                                 </div>
                         </div>
                         <div class="form-group">
@@ -222,7 +307,7 @@ if(isset($_POST['btnsaveorder'])){
                                     <div class="input-group-addon">
                                         <i class="fa fa-user"></i>
                                     </div>
-                                <input type="text" class="form-control" name="txtdue" id="txtdue" required readonly>
+                                <input type="text" class="form-control" name="txtdue" id="txtdue" value="<?= $due; ?>" required readonly>
                                 </div>
                         </div>
                         <br>
@@ -230,21 +315,21 @@ if(isset($_POST['btnsaveorder'])){
                         <label>Payment Method</label>
                         <div class="form-group">
                             <label>
-                                <input type="radio" name="rb" class="minimal-red" value="Cash" checked>Cash
+                                <input type="radio" name="rb" class="minimal-red" value="Cash"<?php echo($payment_type=='Cash')?'checked':'' ?>>Cash
                             </label>
                             <label>
-                                <input type="radio" name="rb" class="minimal-red" value="Card">Card
+                                <input type="radio" name="rb" class="minimal-red" value="Card"<?php echo($payment_type=='Card')?'checked':'' ?>>Card
                             </label>
                             <label>
-                                <input type="radio" name="rb" class="minimal-red" value="Check">Check
+                                <input type="radio" name="rb" class="minimal-red" value="Check"<?php echo($payment_type=='Check')?'checked':'' ?>>Check
                             </label>
                         </div>
                     </div>
                 </div>
                 <hr>
                 <div align="center">
-                    <!-- <input type="text" name="btnsaveorder" value="SaveOrder" class="btn btn-info"> -->
-                    <button type="submit" class="btn btn-info" name="btnsaveorder">SaveOrder</button>
+                    <input type="submit" name="btnupdateorder" value="UpdateOrder" class="btn btn-info">
+                    <!-- <button type="submit" class="btn btn-info" name="btnsaveorder">SaveOrder</button> -->
                 </div>
                 <hr>
             </form>
@@ -269,11 +354,37 @@ if(isset($_POST['btnsaveorder'])){
     })
 
     $(document).ready(function(){
+
+        $('.productidedit').select2()
+
+            $(".productidedit").on('change', function(e){
+                var productid = this.value;
+                var tr=$(this).parent().parent();
+
+                $.ajax({
+                    url:"getproduct.php",
+                    method:"get",
+                    data:{id:productid},
+                    success:function(data){
+
+                        // console.log(data);
+                        tr.find(".pname").val(data["pname"]);
+                        tr.find(".stock").val(data["pstock"]);
+                        tr.find(".price").val(data["saleprice"]);
+                        tr.find(".qty").val(1);
+                        tr.find(".total").val( tr.find(".qty").val() * tr.find(".price").val() );
+                        calculate(0,0);
+                        $("#txtpaid").val("");
+                    }
+                })
+            })
+
+
         $(document).on('click','.btnadd',function(){
             var html='';
             html+='<tr>';
             html+='<td><input type="hidden" class="form-control pname" name="productname[]" readonly></td>';
-            html+='<td><select class="form-control productid" name="productid[]" style="width: 200px";><option value="">Select Option</option><?= fill_product($pdo); ?></select></td>';
+            html+='<td><select class="form-control productid" name="productid[]" style="width: 200px";><option value="">Select Option</option><?= fill_product($pdo,''); ?></select></td>';
 
             html+='<td><input type="text" class="form-control stock" name="stock[]" readonly></td>';
             html+='<td><input type="text" class="form-control price" name="price[]" readonly></td>';
@@ -302,6 +413,7 @@ if(isset($_POST['btnsaveorder'])){
                         tr.find(".qty").val(1);
                         tr.find(".total").val( tr.find(".qty").val() * tr.find(".price").val() );
                         calculate(0,0);
+                        $("#txtpaid").val("");
                     }
                 })
             })
@@ -310,13 +422,14 @@ if(isset($_POST['btnsaveorder'])){
         $(document).on('click','.btnremove',function(){
             $(this).closest('tr').remove();
             calculate(0,0);
-            $("#txtpaid").val(0);
+            $("#txtpaid").val("");
         })
 
         $("#producttable").delegate(".qty","keyup change", function(){
 
             var quantity = $(this);
             var tr=$(this).parent().parent();
+            $("#txtpaid").val("");
 
             if( (quantity.val()-0)>(tr.find(".stock").val()-0) ){
 
