@@ -19,6 +19,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
 <script src="template/plugins/iCheck/icheck.min.js"></script>
 <!-- sweetalert -->
 <script src="template/dist/js/sweetalert.js"></script>
+<!-- AdminLTE App -->
+<script src="template/dist/js/adminlte.min.js"></script>
 
 <!-- DataTables -->
 <script src="template/bower_components/datatables.net/js/jquery.dataTables.min.js"></script>
@@ -36,6 +38,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
         page. However, you can choose any other skin. Make sure you
         apply the skin class to the body tag so the changes take effect. -->
   <link rel="stylesheet" href="template/dist/css/skins/skin-blue.min.css">
+
 
   <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
   <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -69,6 +72,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
 <script src="template/plugins/iCheck/icheck.min.js"></script>
 <!-- Select2 -->
 <script src="template/bower_components/select2/dist/js/select2.full.min.js"></script>
+
+
 </head>
 
 <body class="hold-transition skin-blue sidebar-mini">
@@ -174,7 +179,21 @@ scratch. This page gets rid of all links and provides the needed markup only.
         <li><a href="productlist.php"><i class="fa fa-th-list"></i> <span>Product List</span></a></li>
         <li><a href="createorder.php"><i class="fa fa-first-order"></i> <span>Create Order</span></a></li>
         <li><a href="orderlist.php"><i class="fa fa-list-ul"></i> <span>Order List</span></a></li>
+        <li class="treeview">
+          <a href="#">
+            <i class="fa fa-table"></i> <span>Sales Report</span>
+            <span class="pull-right-container">
+              <i class="fa fa-angle-left pull-right"></i>
+            </span>
+          </a>
+          <ul class="treeview-menu">
+            <li><a href="tablereport.php"><i class="fa fa-circle-o"></i> Table Report</a></li>
+            <li><a href="graphreport.php"><i class="fa fa-circle-o"></i> Graph Report</a></li>
+          </ul>
+        </li>
         <li><a href="registration.php"><i class="fa fa-registered"></i> <span>Registration</span></a></li>
+        
+        
         <!-- <li class="treeview">
           <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
             <span class="pull-right-container">
@@ -191,3 +210,4 @@ scratch. This page gets rid of all links and provides the needed markup only.
     </section>
     <!-- /.sidebar -->
   </aside>
+  
